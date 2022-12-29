@@ -30,7 +30,7 @@ class Handler():
                         else:
                             await self._client.load_extension(cog)
 
-                        self.logger.dev(
+                        self.logger.info(
                             f'**SUCCESS** {self.name} Loading Cog **{cog}**')
 
                     except discord.ext.commands.errors.ExtensionAlreadyLoaded:
