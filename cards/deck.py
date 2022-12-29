@@ -37,12 +37,7 @@ class Card_Deck():
             random.shuffle(self._Deck)
             count -= 1
 
-    def _draw_Cards(self, count: int= 1) -> dict[str, str]:
+    def _draw_Cards(self, count: int = 1) -> dict[str, str]:
         """Draw `count` number of cards."""
         print(f'Drawing {count} {"cards" if count > 1 else "card"}')
         return self._Deck[-count:]
-    
-
-    
-
-
