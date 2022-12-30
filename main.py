@@ -21,7 +21,7 @@ class Bot(commands.Bot):
 
         super().__init__(intents=intents, allowed_mentions=allowed_mentions, command_prefix=self.get_prefix)
 
-    async def get_prefix(self, message: discord.Message):
+    async def get_prefix(self, *stupid_args_to_make_pylance_happy) -> list[str]:
         return ['!', '?']
 
     async def setup_hook(self) -> None:

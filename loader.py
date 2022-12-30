@@ -1,14 +1,15 @@
-import pathlib
-import os
 import logging
+import os
+import pathlib
 
 import discord
 import discord.ext.commands.errors
+from discord.ext import commands
 
 
-class Handler():
-    def __init__(self, client: discord.Client):
-        self._client = client
+class Handler:
+    def __init__(self, client: commands.Bot):
+        self._bot = client
 
         self._cwd = pathlib.Path.cwd()
         self.name = os.path.basename(__file__)
@@ -26,14 +27,13 @@ class Handler():
 
                     try:
                         if reload:
-                            await self._client.reload_extension(cog)
+                            await self._bot.reload_extension(cog)
                         else:
-                            await self._client.load_extension(cog)
+                            await self._bot.load_extension(cog)
 
-                        self.logger.info(
-                            f'**SUCCESS** {self.name} Loading Cog **{cog}**')
+                        self.logger.info(f'**SUCCESS** {self.name} Loading Cog **{cog}**')
 
-                    except discord.ext.commands.errors.ExtensionAlreadyLoaded:
+                    except commands.errors.ExtensionAlreadyLoaded:
                         continue
 
         except FileNotFoundError as e:

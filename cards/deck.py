@@ -1,8 +1,7 @@
-
 import random
 
 
-class Card_Deck():
+class Card_Deck:
     """52 Playing Card Deck"""
 
     def __init__(self, shuffle_count: int = 1, use_Joker: bool = False) -> list:
@@ -33,7 +32,7 @@ class Card_Deck():
     def _shuffle(self, count: int = 1) -> dict[str, str]:
         """Shuffles the Deck"""
         print(f'Shuffling the Deck {count} {"times" if count > 1 else "time"}')
-        while (count > 0):
+        while count > 0:
             random.shuffle(self._Deck)
             count -= 1
 
