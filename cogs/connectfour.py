@@ -174,40 +174,39 @@ class ConnectFourInput(discord.ui.View):
         embed.description += f"\n\n{self.current_player.member.mention}'s move."  # type: ignore
         return embed
 
+    async def handle(self, inter: discord.Interaction, num: int):
+        if self._board.add_piece(num, DiscPiece(self.current_player)):
+            await self.update(inter)
+        else:
+            return await inter.response.send_message("OOps you can't PlAy tHeRe", ephemeral=True)
+
     @discord.ui.button(label='1')
     async def button_numero_uno(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self._board.add_piece(0, DiscPiece(self.current_player))
-        await self.update(interaction)
+        await self.handle(interaction, 0)
 
     @discord.ui.button(label='2')
     async def button_numero_dos(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self._board.add_piece(1, DiscPiece(self.current_player))
-        await self.update(interaction)
+        await self.handle(interaction, 1)
 
     @discord.ui.button(label='3')
     async def button_numero_tres(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self._board.add_piece(2, DiscPiece(self.current_player))
-        await self.update(interaction)
+        await self.handle(interaction, 2)
 
     @discord.ui.button(label='4')
     async def button_numero_cuatro(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self._board.add_piece(3, DiscPiece(self.current_player))
-        await self.update(interaction)
+        await self.handle(interaction, 3)
 
     @discord.ui.button(label='5')
     async def button_numero_cinco(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self._board.add_piece(4, DiscPiece(self.current_player))
-        await self.update(interaction)
+        await self.handle(interaction, 4)
 
     @discord.ui.button(label='6')
     async def button_numero_seis(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self._board.add_piece(5, DiscPiece(self.current_player))
-        await self.update(interaction)
+        await self.handle(interaction, 5)
 
     @discord.ui.button(label='7')
     async def button_numero_siete(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self._board.add_piece(6, DiscPiece(self.current_player))
-        await self.update(interaction)
+        await self.handle(interaction, 6)
 
 
 class ConnectFour(commands.Cog):
