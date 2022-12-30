@@ -23,6 +23,7 @@ class Events(commands.Cog):
         tree = self.bot.tree
         tree.on_error = tree.__class__.on_error  # type: ignore
 
+    @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: Exception):
         if isinstance(error, self.ERRORS_TO_IGNORE):
             return
