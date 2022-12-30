@@ -1,4 +1,12 @@
 __pycache__
-venv
 .github
+
+# hide config
 config.py
+
+# hide logs dir
+logs/
+
+# hide venvs
+venv
+.venv
