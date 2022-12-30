@@ -1,0 +1,228 @@
+import itertools
+from dataclasses import dataclass
+from enum import Enum
+from typing import Optional
+
+import discord
+from discord import app_commands
+from discord.ext import commands
+
+
+# BRRRRT
+class NumEnum(Enum):
+    """Represents unicode number plaques of each value."""
+
+    one = "\U00000031\U0000fe0f\U000020e3"
+    two = "\U00000032\U0000fe0f\U000020e3"
+    three = "\U00000033\U0000fe0f\U000020e3"
+    four = "\U00000034\U0000fe0f\U000020e3"
+    five = "\U00000035\U0000fe0f\U000020e3"
+    six = "\U00000036\U0000fe0f\U000020e3"
+    seven = "\U00000037\U0000fe0f\U000020e3"
+
+
+class DiscType(Enum):
+    red = "\U0001f534"
+    black = "\U000026ab"
+    yellow = "\U0001f7e1"
+
+
+@dataclass(slots=True, kw_only=True)
+class Player:
+    member: discord.Member
+    emoji: DiscType
+
+
+@dataclass(slots=True)
+class DiscPiece:
+    owner: Player
+
+
+class ConnectFourBoard:
+    def __init__(self) -> None:
+        self.columns: int = 7
+        self.rows: int = 6
+        self._board: list[list[Optional[DiscPiece]]] = [[None for _ in range(self.columns)] for _ in range(self.rows)]
+
+    def add_piece(self, column: int, piece: DiscPiece) -> Optional[int]:
+        for row in reversed(range(self.rows)):
+            if not self._board[row][column]:
+                self._board[row][column] = piece
+                return row
+        return None
+
+    @property
+    def render(self) -> str:
+        out = str()
+
+        for column in range(self.rows):
+            for row in range(self.columns):
+                item = self._board[column][row]
+                if item is not None:
+                    out += f"{item.owner.emoji.value}"
+                else:
+                    out += f"{DiscType.black.value}"
+            out += "\n"
+        out += "".join((num.value for num in NumEnum))  # BLACK MAGIC
+
+        return out
+
+    def is_full(self) -> bool:
+        return all(self._board[0])
+
+    def is_win(self, piece: DiscType) -> bool:
+        # Horizontal Win
+        for row in range(self.rows):
+            for col in range(self.columns - 3):
+                if all(self._board[row][col + i] is not None and self._board[row][col + i].owner.emoji == piece for i in range(4)):  # type: ignore
+                    return True
+
+        # Vertical Win
+        for row in range(self.rows - 3):
+            for col in range(self.columns):
+                if all(self._board[row + i][col] is not None and self._board[row + i][col].owner.emoji == piece for i in range(4)):  # type: ignore
+                    return True
+
+        # Diagonal Win
+        for row in range(self.rows - 3):
+            for col in range(self.columns - 3):
+                if all(self._board[row + i][col + i] is not None and self._board[row + i][col + i].owner.emoji == piece for i in range(4)):  # type: ignore
+                    return True
+        for row in range(3, self.rows):
+            for col in range(self.columns - 3):
+                if all(self._board[row - i][col + i] is not None and self._board[row - i][col + i].owner.emoji == piece for i in range(4)):  # type: ignore
+                    return True
+
+        # If no win
+        return False
+
+
+class ConnectFourInput(discord.ui.View):
+    message: discord.Message
+
+    def __init__(self, player_one: discord.Member, player_two: discord.Member) -> None:
+        super().__init__(timeout=60)
+        self._player_one = Player(member=player_one, emoji=DiscType.red)
+        self._player_two = Player(member=player_two, emoji=DiscType.yellow)
+        self.player_iterator = itertools.cycle((self._player_one, self._player_two))
+        self.current_player = next(self.player_iterator)  # update after each move
+        self._board = ConnectFourBoard()
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        assert isinstance(interaction.user, discord.Member)
+
+        if interaction.user == self.current_player.member:
+            return True
+        elif interaction.user != self.current_player.member and interaction.user in (
+            self._player_one.member,
+            self._player_two.member,
+        ):
+            await interaction.response.send_message(
+                f"You cannot use this currently, it's {self.current_player.member.mention}'s turn.",
+                ephemeral=True,
+            )
+        else:
+            await interaction.response.send_message(f"You are not a part of this game.", ephemeral=True)
+
+        return False
+
+    async def on_timeout(self) -> None:
+        for child in self.children:
+            child.disabled = True  # type: ignore
+        await self.message.edit(
+            content=f"Connect4: {self.current_player.member.mention} did not move in time so the game ended.",
+            embed=None,
+            view=None,
+        )
+        return await super().on_timeout()
+
+    def get_base_embed(self) -> discord.Embed:
+        BaSeEmBeD = discord.Embed(
+            title="Connect Four", description=f"{self._player_one.member.mention} vs {self._player_two.member.mention}\n"
+        )
+        BaSeEmBeD.description += self._board.render  # type: ignore # :bigbrain:
+        return BaSeEmBeD
+
+    async def update(self, interaction: discord.Interaction, /) -> None:
+        BaSeEmBeD = self.get_base_embed()
+
+        assert BaSeEmBeD.description is not None
+
+        win = self._board.is_win(self.current_player.emoji)
+
+        if win:
+            BaSeEmBeD.description += f"\n\n{self.current_player.member.mention} has won."
+            await interaction.response.edit_message(embed=BaSeEmBeD)
+            await self.message.edit(view=None)  # that works
+            self.stop()
+
+        elif self._board.is_full():
+            BaSeEmBeD.description += "\n\nEnded in a tie."
+            await interaction.response.edit_message(embed=BaSeEmBeD)
+            await self.message.edit(view=None)
+            self.stop()
+        else:
+            next_player = next(self.player_iterator)
+            self.current_player = next_player
+
+            BaSeEmBeD.description += f"\n\n{next_player.member.mention}'s move."
+            await interaction.response.edit_message(embed=BaSeEmBeD)
+
+    @property
+    def initial(self) -> discord.Embed:
+        embed = self.get_base_embed()
+        embed.description += f"\n\n{self.current_player.member.mention}'s move."  # type: ignore
+        return embed
+
+    @discord.ui.button(label='1')
+    async def button_numero_uno(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self._board.add_piece(0, DiscPiece(self.current_player))
+        await self.update(interaction)
+
+    @discord.ui.button(label='2')
+    async def button_numero_dos(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self._board.add_piece(1, DiscPiece(self.current_player))
+        await self.update(interaction)
+
+    @discord.ui.button(label='3')
+    async def button_numero_tres(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self._board.add_piece(2, DiscPiece(self.current_player))
+        await self.update(interaction)
+
+    @discord.ui.button(label='4')
+    async def button_numero_cuatro(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self._board.add_piece(3, DiscPiece(self.current_player))
+        await self.update(interaction)
+
+    @discord.ui.button(label='5')
+    async def button_numero_cinco(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self._board.add_piece(4, DiscPiece(self.current_player))
+        await self.update(interaction)
+
+    @discord.ui.button(label='6')
+    async def button_numero_seis(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self._board.add_piece(5, DiscPiece(self.current_player))
+        await self.update(interaction)
+
+    @discord.ui.button(label='7')
+    async def button_numero_siete(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self._board.add_piece(6, DiscPiece(self.current_player))
+        await self.update(interaction)
+
+
+class ConnectFour(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @app_commands.command()
+    @app_commands.guild_only()
+    async def connect4(self, interaction: discord.Interaction, target: discord.Member):
+        assert isinstance(interaction.user, discord.Member)
+        view = ConnectFourInput(player_one=interaction.user, player_two=target)
+        embed = view.initial
+        await interaction.response.send_message(embed=embed, view=view)
+        view.message = await interaction.original_response()
+
+
+async def setup(bot):
+    await bot.add_cog(ConnectFour(bot))
