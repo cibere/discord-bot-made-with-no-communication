@@ -1,4 +1,4 @@
 class Card_Matches:
     def __init__(self):
-        # I was thinking having functions to check `Suites` or `In Sequence` (May be easier to store the cards with an INT value and allow for easier comparsion)
+        # What happened to no communication? (btw there originally was other text here)
         print()
