@@ -317,7 +317,7 @@ class ConquestMainView(discord.ui.View):
     
   @discord.ui.button(emoji = '❔', label = 'Help', style = discord.ButtonStyle.blurple)
   async def help_button(self, interaction, button):
-    await interaction.response.send_message('Tutorial: bla', ephemeral = True)
+    await interaction.response.send_message('Tutorial: First a host needs to create a game using `!conquest` or what the prefix is, and the host will have options to stop/abort and start the game, Then in the game screen you can buy eco that gives you cash every turn or attack someone, but by attacking someone the defender will lose less troops than you so keep in mind of that. Sorry for bad tutorial but got no time.', ephemeral = True)
     
   @discord.ui.button(label = 'View', style = discord.ButtonStyle.blurple)
   async def view_button(self, interaction, button):
